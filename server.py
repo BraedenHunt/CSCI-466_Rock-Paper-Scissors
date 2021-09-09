@@ -8,23 +8,42 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 class GameHistoryManager:
 
-    def __init__(self, game_id):
+    player1_wins = 0
+    player2_wins = 0
+    player1_moves = []
+    player2_moves = []
+
+    def __init__(self, game_id, player1_id, player2_id):
         self.game_id = game_id
+        self.player1_id = player1_id
+        self.player2_id = player2_id
         self.file_name = str(game_id) + '.txt'
+        with open(self.file_name, 'w+') as file:
+            lines = file.readlines()
+            if len(lines) == 0:
+                file.write('{}|0\n{}|0\n\n'.format(player1_id, player2_id))
+            else:
+                self.player1_moves = lines[2].split('|')
+                self.player2_moves = lines[3].split('|')
 
     def add_move(self, player_id, move_number, move):
-        with open(self.file_name, 'a+') as file:
-            file.seek(0)
-            history = file.read()
-
-            # if the player has already made a move for that turn, return false
-            if history.find('{}|{}'.format(player_id, move_number)) < 0:
-                file.seek(0, io.SEEK_END)
-                file.write('{}|{}|{}\n'.format(player_id, move_number, move))
-                return True
+        with open(self.file_name, 'r+') as file:
+            history = file.readlines()
+            if player_id == self.player1_id and len(self.player1_moves) == move_number - 1:
+                self.player1_moves.append(move)
+                history[2] = '|'.join(self.player1_moves)
+            elif player_id == self.player2_id and len(self.player2_moves) == move_number - 1:
+                self.player2_moves.append(move)
+                history[3] = '|'.join(self.player2_moves)
             else:
                 return False
+            file.seek(0)
+            file.writelines(history)
+            return True
 
+    def find_last_move(self, player_id):
+        with open(self.file_name, 'r+') as file:
+            history = file.readlines()
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     """A custom HTTP Request Handler based on SimpleHTTPRequestHandler"""
@@ -61,7 +80,8 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         print(type(self.headers))
         game_id = self.headers.get("gameId")
-        user_id = self.headers.get("userId")
+        user_id = int(self.headers.get("userId"))
+        player2_id = int(self.headers.get("player2Id"))
 
         # Source:
         # https://stackoverflow.com/questions/5975952/how-to-extract-http-message-body-in-basehttprequesthandler-do-post
@@ -70,7 +90,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
         json_body = json.loads(post_body)
 
-        game_manager = GameHistoryManager(game_id)
+        game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
         if game_manager.add_move(user_id, json_body["moveNumber"], json_body["move"]):
             self.send_response(HTTPStatus.OK)
         else:
