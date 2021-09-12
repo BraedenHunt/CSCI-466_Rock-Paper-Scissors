@@ -6,44 +6,83 @@ from http import HTTPStatus
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-class GameHistoryManager:
-
-    player1_wins = 0
-    player2_wins = 0
-    player1_moves = []
-    player2_moves = []
-
-    def __init__(self, game_id, player1_id, player2_id):
+class GameHistory:
+    def __init__(self, game_id='', player1_id=0, player2_id=0, player1_wins=0, player2_wins=0, ties=0, player1_moves=[], player2_moves=[]):
         self.game_id = game_id
         self.player1_id = player1_id
         self.player2_id = player2_id
-        self.file_name = str(game_id) + '.txt'
-        with open(self.file_name, 'w+') as file:
-            lines = file.readlines()
-            if len(lines) == 0:
-                file.write('{}|0\n{}|0\n\n'.format(player1_id, player2_id))
-            else:
-                self.player1_moves = lines[2].split('|')
-                self.player2_moves = lines[3].split('|')
+        self.player1_wins = player1_wins
+        self.player2_wins = player2_wins
+        self.ties = ties
+        self.player1_moves = player1_moves
+        self.player2_moves = player2_moves
+
+
+class GameHistoryEncoder(json.JSONEncoder):
+    def default(self, history):
+        if isinstance(history, GameHistory):
+            return history.__dict__
+        else:
+            return json.JSONEncoder.default(self, history)
+
+
+class GameHistoryManager:
+    def __init__(self, game_id, player1_id, player2_id):
+        self.file_name = str(game_id) + '.json'
+        try:
+            with open(self.file_name, 'r') as file:
+                self.game_history = GameHistory(**json.load(file))
+        except:
+            with open(self.file_name, 'w+') as file:
+                self.game_history = GameHistory()
+                self.game_history.game_id = game_id
+                self.game_history.player1_id = player1_id
+                self.game_history.player2_id = player2_id
+                json.dump(self.game_history, file, cls=GameHistoryEncoder)
 
     def add_move(self, player_id, move_number, move):
-        with open(self.file_name, 'r+') as file:
-            history = file.readlines()
-            if player_id == self.player1_id and len(self.player1_moves) == move_number - 1:
-                self.player1_moves.append(move)
-                history[2] = '|'.join(self.player1_moves)
-            elif player_id == self.player2_id and len(self.player2_moves) == move_number - 1:
-                self.player2_moves.append(move)
-                history[3] = '|'.join(self.player2_moves)
+            if player_id == self.game_history.player1_id and len(self.game_history.player1_moves) == move_number - 1:
+                self.game_history.player1_moves.append(move)
+            elif player_id == self.game_history.player2_id and len(self.game_history.player2_moves) == move_number - 1:
+                self.game_history.player2_moves.append(move)
             else:
                 return False
-            file.seek(0)
-            file.writelines(history)
+            self.save_game_history()
             return True
 
-    def find_last_move(self, player_id):
-        with open(self.file_name, 'r+') as file:
-            history = file.readlines()
+    def find_winner(self, move):
+        if move < min(len(self.game_history.player1_moves), len(self.game_history.player2_moves)):
+            return self.determine_winner(self.game_history.player1_moves[move], self.game_history.player2_moves[move])
+
+    def find_last_winner(self, move=-1):
+        last_move = min(len(self.game_history.player1_moves), len(self.game_history.player2_moves))
+        return self.determine_winner(self.game_history.player1_moves[last_move], self.game_history.player2_moves[last_move])
+
+    # 0: tie, 1: move1 won, 2: move2 won
+    def determine_winner(self, move1, move2):
+        if move1 == move2:
+            return 0
+        if move1 == "rock":
+            if move2 == "scissors":
+                return 1
+            elif move2 == "paper":
+                return 2
+        if move1 == "paper":
+            if move2 == "rock":
+                return 1
+            elif move2 == "scissors":
+                return 2
+        if move1 == "scissors":
+            if move2 == "paper":
+                return 1
+            elif move2 == "rock":
+                return 2
+        return 0
+
+    def save_game_history(self):
+        with open(self.file_name, 'w') as file:
+            json.dump(self.game_history, file, cls=GameHistoryEncoder)
+
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     """A custom HTTP Request Handler based on SimpleHTTPRequestHandler"""
@@ -56,26 +95,25 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Serve a GET request."""
 
-        # get info from the HTTP request
-        # look at https://docs.python.org/3/library/http.server.html for other BaseHTTPRequestHandler instance variables
         print(self.client_address)
-
-        # update the path with the prefix of server files
         print(self.headers)
+        print(self.path)
+        if self.headers == "/result":
+            game_id = self.headers.get('gameId')
+            user_id = int(self.headers.get('userId'))
+            player2_id = int(self.headers.get('userId'))
+            move_id = int(self.headers.get('moveId'))
+            result = self.getResult(game_id, user_id, player2_id, move_id)
+
+            self.send_response(HTTPStatus.OK, message=result)
 
         # reply to client
         self.send_response(HTTPStatus.OK)
         self.end_headers()
-        '''try:
-            f = open(self.path, 'rb')
-            self.send_response(HTTPStatus.OK)
-            self.end_headers()
-            shutil.copyfileobj(f, self.wfile)
-            f.close()
-        except OSError:
-            self.send_response(HTTPStatus.NOT_FOUND)
-            self.end_headers()
-            '''
+
+    def getResult(self, game_id, user_id, player2_id, move_id):
+        game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
+        game_manager.find_winner(move_id)
 
     def do_POST(self):
         print(type(self.headers))
