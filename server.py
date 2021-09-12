@@ -4,6 +4,7 @@ import json
 import sys
 from http import HTTPStatus
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import result
 
 
 class GameHistory:
@@ -50,13 +51,19 @@ class GameHistoryManager:
             self.save_game_history()
             return True
 
-    def find_winner(self, move):
+    def find_result(self, move):
+        move_result = result.MoveResult()
         if move < min(len(self.game_history.player1_moves), len(self.game_history.player2_moves)):
-            return self.determine_winner(self.game_history.player1_moves[move], self.game_history.player2_moves[move])
+            move_result.player1_move = self.game_history.player1_moves[move]
+            move_result.player2_move = self.game_history.player2_moves[move]
+            move_result.winner = self.determine_winner(self.game_history.player1_moves[move], self.game_history.player2_moves[move])
+            move_result.player1_id = self.game_history.player1_id
+            move_result.player2_id = self.game_history.player2_id
+        return move_result
 
-    def find_last_winner(self, move=-1):
+    def find_last_result(self, move=-1):
         last_move = min(len(self.game_history.player1_moves), len(self.game_history.player2_moves))
-        return self.determine_winner(self.game_history.player1_moves[last_move], self.game_history.player2_moves[last_move])
+        return self.find_result(last_move)
 
     # 0: tie, 1: move1 won, 2: move2 won
     def determine_winner(self, move1, move2):
@@ -98,22 +105,24 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         print(self.client_address)
         print(self.headers)
         print(self.path)
-        if self.headers == "/result":
+        if self.path == "/result":
             game_id = self.headers.get('gameId')
             user_id = int(self.headers.get('userId'))
-            player2_id = int(self.headers.get('userId'))
+            player2_id = int(self.headers.get('player2Id'))
             move_id = int(self.headers.get('moveId'))
-            result = self.getResult(game_id, user_id, player2_id, move_id)
+            move_result = self.getResult(game_id, user_id, player2_id, move_id)
 
-            self.send_response(HTTPStatus.OK, message=result)
+            self.send_response(HTTPStatus.OK)
+            self.end_headers()
+            string = json.dumps(move_result, cls=result.MoveResultEncoder)
+            self.wfile.write(bytes(string, 'utf-8'))
 
-        # reply to client
-        self.send_response(HTTPStatus.OK)
-        self.end_headers()
 
     def getResult(self, game_id, user_id, player2_id, move_id):
+        player1 = min(user_id, player2_id)
+        player2 = max(user_id, player2_id)
         game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
-        game_manager.find_winner(move_id)
+        return game_manager.find_result(move_id)
 
     def do_POST(self):
         print(type(self.headers))
