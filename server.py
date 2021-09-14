@@ -1,95 +1,11 @@
-import io
 import functools
 import json
 import sys
 from http import HTTPStatus
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import result
-
-
-class GameHistory:
-    def __init__(self, game_id='', player1_id=0, player2_id=0, player1_wins=0, player2_wins=0, ties=0, player1_moves=[], player2_moves=[]):
-        self.game_id = game_id
-        self.player1_id = player1_id
-        self.player2_id = player2_id
-        self.player1_wins = player1_wins
-        self.player2_wins = player2_wins
-        self.ties = ties
-        self.player1_moves = player1_moves
-        self.player2_moves = player2_moves
-
-
-class GameHistoryEncoder(json.JSONEncoder):
-    def default(self, history):
-        if isinstance(history, GameHistory):
-            return history.__dict__
-        else:
-            return json.JSONEncoder.default(self, history)
-
-
-class GameHistoryManager:
-    def __init__(self, game_id, player1_id, player2_id):
-        self.file_name = str(game_id) + '.json'
-        try:
-            with open(self.file_name, 'r') as file:
-                self.game_history = GameHistory(**json.load(file))
-        except:
-            with open(self.file_name, 'w+') as file:
-                self.game_history = GameHistory()
-                self.game_history.game_id = game_id
-                self.game_history.player1_id = player1_id
-                self.game_history.player2_id = player2_id
-                json.dump(self.game_history, file, cls=GameHistoryEncoder)
-
-    def add_move(self, player_id, move_number, move):
-            if player_id == self.game_history.player1_id and len(self.game_history.player1_moves) == move_number - 1:
-                self.game_history.player1_moves.append(move)
-            elif player_id == self.game_history.player2_id and len(self.game_history.player2_moves) == move_number - 1:
-                self.game_history.player2_moves.append(move)
-            else:
-                return False
-            self.save_game_history()
-            return True
-
-    def find_result(self, move):
-        move_result = result.MoveResult()
-        if move < min(len(self.game_history.player1_moves), len(self.game_history.player2_moves)):
-            move_result.player1_move = self.game_history.player1_moves[move]
-            move_result.player2_move = self.game_history.player2_moves[move]
-            move_result.winner = self.determine_winner(self.game_history.player1_moves[move], self.game_history.player2_moves[move])
-            move_result.player1_id = self.game_history.player1_id
-            move_result.player2_id = self.game_history.player2_id
-        return move_result
-
-    def find_last_result(self, move=-1):
-        last_move = min(len(self.game_history.player1_moves), len(self.game_history.player2_moves))
-        return self.find_result(last_move)
-
-    # 0: tie, 1: move1 won, 2: move2 won
-    def determine_winner(self, move1, move2):
-        if move1 == move2:
-            return 0
-        if move1 == "rock":
-            if move2 == "scissors":
-                return 1
-            elif move2 == "paper":
-                return 2
-        if move1 == "paper":
-            if move2 == "rock":
-                return 1
-            elif move2 == "scissors":
-                return 2
-        if move1 == "scissors":
-            if move2 == "paper":
-                return 1
-            elif move2 == "rock":
-                return 2
-        return 0
-
-    def save_game_history(self):
-        with open(self.file_name, 'w') as file:
-            json.dump(self.game_history, file, cls=GameHistoryEncoder)
-
+from game_history import GameHistoryManager
+from server_state import ServerStateManager
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     """A custom HTTP Request Handler based on SimpleHTTPRequestHandler"""
@@ -117,6 +33,15 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             string = json.dumps(move_result, cls=result.MoveResultEncoder)
             self.wfile.write(bytes(string, 'utf-8'))
 
+        elif self.path == "/create_game":
+            serv_mgr = ServerStateManager()
+            game_id = serv_mgr.get_next_game()
+            p1 = serv_mgr.get_next_player()
+            p2 = serv_mgr.get_next_player()
+            response = {'gameId': game_id, 'player1Id': p1, 'player2Id': p2}
+            self.send_response(HTTPStatus.OK)
+            self.end_headers()
+            self.wfile.write(bytes(json.dumps(response), 'utf-8'))
 
     def getResult(self, game_id, user_id, player2_id, move_id):
         player1 = min(user_id, player2_id)
@@ -126,7 +51,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         print(type(self.headers))
-        game_id = self.headers.get("gameId")
+        game_id = int(self.headers.get("gameId"))
         user_id = int(self.headers.get("userId"))
         player2_id = int(self.headers.get("player2Id"))
 
@@ -138,7 +63,11 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         json_body = json.loads(post_body)
 
         game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
-        if game_manager.add_move(user_id, json_body["moveNumber"], json_body["move"]):
+        move = json_body["move"]
+        if move == "reset":
+            game_manager.request_reset(user_id)
+            self.send_response(HTTPStatus.OK)
+        elif game_manager.add_move(user_id, json_body["moveNumber"], json_body["move"]):
             self.send_response(HTTPStatus.OK)
         else:
             self.send_response(HTTPStatus.ALREADY_REPORTED)
