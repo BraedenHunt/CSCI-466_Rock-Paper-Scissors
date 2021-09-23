@@ -40,6 +40,15 @@ class GameHistoryManager:
                 self.game_history.player2_id = player2_id
                 json.dump(self.game_history, file, cls=GameHistoryEncoder)
 
+    @staticmethod
+    def get_player_ids(game_id):
+        try:
+            with open('games/' + str(game_id) + '.json', 'r') as file:
+                game_history = GameHistory(**json.load(file))
+                return game_history.player1_id, game_history.player2_id
+        except Exception:
+            return ()
+
     def add_move(self, player_id, move_number, move):
             if player_id == self.game_history.player1_id and len(self.game_history.player1_moves) == move_number - 1:
                 self.game_history.player1_moves.append(move)
@@ -49,6 +58,8 @@ class GameHistoryManager:
                 return False
             self.save_game_history()
             return True
+
+
 
     def request_reset(self, player_id):
         if player_id == self.game_history.player1_id:

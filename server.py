@@ -3,6 +3,8 @@ import json
 import sys
 from http import HTTPStatus
 from http.server import HTTPServer, BaseHTTPRequestHandler
+
+import game_history
 import result
 from game_history import GameHistoryManager
 from server_state import ServerStateManager
@@ -25,8 +27,9 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             game_id = self.headers.get('gameId')
             user_id = int(self.headers.get('userId'))
             player2_id = int(self.headers.get('player2Id'))
-            move_id = int(self.headers.get('moveId'))
-            move_result = self.getResult(game_id, user_id, player2_id, move_id)
+            move_id = self.headers.get('moveId')
+            move_id = int(move_id) if move_id else -1
+            move_result = self.get_result(game_id, user_id, player2_id, move_id)
 
             self.send_response(HTTPStatus.OK)
             self.end_headers()
@@ -38,16 +41,33 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             game_id = serv_mgr.get_next_game()
             p1 = serv_mgr.get_next_player()
             p2 = serv_mgr.get_next_player()
+            GameHistoryManager(game_id, p1, p2)
             response = {'gameId': game_id, 'player1Id': p1, 'player2Id': p2}
             self.send_response(HTTPStatus.OK)
             self.end_headers()
             self.wfile.write(bytes(json.dumps(response), 'utf-8'))
 
-    def getResult(self, game_id, user_id, player2_id, move_id):
+        elif self.path == "/get_game":
+            game_id = self.headers.get('gameId')
+            ids = self.get_game(str(game_id))
+            if len(ids) < 2:
+                self.send_response(HTTPStatus.BAD_REQUEST)
+                self.end_headers()
+                return
+            response = {'player1Id': ids[0], "player2Id": ids[1]}
+            self.send_response(HTTPStatus.OK)
+            self.end_headers()
+            self.wfile.write(bytes(json.dumps(response), 'utf-8'))
+
+
+    def get_result(self, game_id, user_id, player2_id, move_id):
         player1 = min(user_id, player2_id)
         player2 = max(user_id, player2_id)
         game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
         return game_manager.find_result(move_id)
+
+    def get_game(self, game_id):
+        return GameHistoryManager.get_player_ids(game_id)
 
     def do_POST(self):
         print(type(self.headers))

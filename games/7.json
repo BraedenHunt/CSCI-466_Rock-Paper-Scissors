@@ -1,0 +1,1 @@
+{"game_id": 7, "player1_id": 13, "player2_id": 14, "player1_wins": 0, "player2_wins": 0, "ties": 0, "player1_moves": ["rock", "paper", "scissors"], "player2_moves": ["paper", "paper", "paper"], "player1_reset": false, "player2_reset": false}
