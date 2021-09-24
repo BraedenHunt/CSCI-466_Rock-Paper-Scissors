@@ -1,7 +1,7 @@
 from json import JSONEncoder
 
 class MoveResult:
-    def __init__(self, player1_id=0, player2_id=0, player1_move='', player2_move='', winner=0):
+    def __init__(self, player1_id=0, player2_id=0, player1_move='', player2_move='', winner=-1):
         self.player1_id = player1_id
         self.player2_id = player2_id
         self.player1_move = player1_move

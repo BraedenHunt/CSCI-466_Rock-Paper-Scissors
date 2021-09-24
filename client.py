@@ -5,6 +5,10 @@ options = "0) Connect to game\n" \
           "2) Check Results\n" \
           "q) Exit game"
 line_break = '--------------------'
+move_options = "1) Rock\n" \
+               "2) Paper\n" \
+               "3) Scissors\n" \
+               "r) Request Reset"
 client_mgr = ClientManager('http://localhost:5000')
 
 def main():
@@ -50,8 +54,10 @@ def connect_to_game():
 
 def send_move():
     # TODO create menu to select move and send move
-    print("Sending move")
-    pass
+    print("Select the move you want to send: ")
+    print(move_options)
+    sel = input("Selection: ")
+    client_mgr.send_move(moves[sel])
 
 def check_results():
     winner, player_move, opponent_move = client_mgr.get_results()
@@ -59,12 +65,14 @@ def check_results():
         print("You tied! You both played " + str(player_move))
     elif winner == 1:
         print("You won! Your {} beat their {}".format(player_move, opponent_move))
-    else:
+    elif winner == 2:
         print("You lost! Their {} beat your {}".format(opponent_move, player_move))
-
+    else:
+        print("There isn't a result ready.")
 
 main_menu = {"0": game_menu, "1": send_move, "2": check_results, "q": exit }
 connect_menu = {"0": create_game, "1": connect_to_game, 'q': main}
+moves = {"1": "rock", "2": "paper", "3": "scissors", "r": "reset"}
 
 if __name__ == "__main__":
     main()

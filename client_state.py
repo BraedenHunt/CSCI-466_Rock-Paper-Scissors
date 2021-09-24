@@ -29,6 +29,16 @@ class ClientManager:
         body = json.loads(r.content.decode('utf-8'))
         return body['gameId'], body['player1Id'], body['player2Id']
 
+    def send_move(self, move):
+        # TODO: Implement send move
+        self.get_next_move_id()
+        r = requests.post(self.server_url,
+                          headers={"gameId": str(self.game_id),
+                                   "userId": str(self.user_id),
+                                   "player2Id": str(self.p2_id)},
+                          json={"move": str(move),
+                                "moveId": str(self.move_id)})
+
     def get_results(self):
         r = requests.get(self.server_url + '/result',
                          headers={"gameId": str(self.game_id),
@@ -36,6 +46,9 @@ class ClientManager:
                                   "player2Id": str(self.p2_id),
                                   "moveId": str(self.move_id)})
         result = MoveResult(**json.loads(r.content.decode('utf-8')))
+        if result.winner == -1:
+            return -1, '', ''
+
         if self.user_id == result.player1_id:
             winner = result.winner
             user_move = result.player1_move
@@ -45,3 +58,12 @@ class ClientManager:
             user_move = result.player2_move
             opponent_move = result.player1_move
         return winner, user_move, opponent_move
+
+    def get_next_move_id(self):
+        r = requests.get(self.server_url + "/get_next_move_id",
+                         headers={"gameId": str(self.game_id),
+                                  "userId": str(self.user_id),
+                                  "player2Id": str(self.p2_id)})
+        body = json.loads(r.content.decode('utf-8'))
+        self.move_id = int(body['moveId'])
+        return self.move_id

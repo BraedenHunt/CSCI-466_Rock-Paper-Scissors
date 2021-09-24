@@ -59,6 +59,14 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(bytes(json.dumps(response), 'utf-8'))
 
+        elif self.path == "/get_next_move_id":
+            game_id = int(self.headers.get('gameId'))
+            user_id = int(self.headers.get('userId'))
+            player2_id = int(self.headers.get('player2Id'))
+            response = {'moveId': self.get_next_move_id(game_id, user_id, player2_id)}
+            self.send_response(HTTPStatus.OK)
+            self.end_headers()
+            self.wfile.write(bytes(json.dumps(response), 'utf-8'))
 
     def get_result(self, game_id, user_id, player2_id, move_id):
         player1 = min(user_id, player2_id)
@@ -68,6 +76,10 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def get_game(self, game_id):
         return GameHistoryManager.get_player_ids(game_id)
+
+    def get_next_move_id(self, game_id, user_id, player2_id):
+        game_mgr = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
+        return game_mgr.get_next_move_id(user_id)
 
     def do_POST(self):
         print(type(self.headers))
@@ -87,7 +99,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         if move == "reset":
             game_manager.request_reset(user_id)
             self.send_response(HTTPStatus.OK)
-        elif game_manager.add_move(user_id, json_body["moveNumber"], json_body["move"]):
+        elif game_manager.add_move(user_id, int(json_body["moveId"]), json_body["move"]):
             self.send_response(HTTPStatus.OK)
         else:
             self.send_response(HTTPStatus.ALREADY_REPORTED)

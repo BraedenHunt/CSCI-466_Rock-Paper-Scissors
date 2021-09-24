@@ -74,7 +74,8 @@ class GameHistoryManager:
 
     def find_result(self, move):
         move_result = result.MoveResult()
-        if move <= min(len(self.game_history.player1_moves), len(self.game_history.player2_moves)):
+        latest_move = min(len(self.game_history.player1_moves), len(self.game_history.player2_moves))
+        if move <= latest_move and latest_move > 0:
             move_result.player1_move = self.game_history.player1_moves[move-1]
             move_result.player2_move = self.game_history.player2_moves[move-1]
             move_result.winner = self.determine_winner(self.game_history.player1_moves[move-1], self.game_history.player2_moves[move-1])
@@ -85,6 +86,12 @@ class GameHistoryManager:
     def find_last_result(self, move=-1):
         last_move = min(len(self.game_history.player1_moves), len(self.game_history.player2_moves))
         return self.find_result(last_move)
+
+    def get_next_move_id(self, user_id):
+        if user_id == self.game_history.player1_id:
+            return len(self.game_history.player1_moves)+1
+        else:
+            return len(self.game_history.player2_moves)+1
 
     # 0: tie, 1: move1 won, 2: move2 won
     def determine_winner(self, move1, move2):
