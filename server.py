@@ -20,6 +20,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         """Serve a GET request."""
 
         print('Handling GET: ' + self.path)
+        print(self.headers)
         if self.path == "/result":
             game_id = self.headers.get('gameId')
             user_id = int(self.headers.get('userId'))
@@ -92,6 +93,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         print("Handling POST")
+        print(self.headers)
         game_id = int(self.headers.get("gameId"))
         user_id = int(self.headers.get("userId"))
         player2_id = int(self.headers.get("player2Id"))
@@ -102,6 +104,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         post_body = self.rfile.read(content_len)
 
         json_body = json.loads(post_body)
+        print(json_body)
 
         game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
         move = json_body["move"]

@@ -54,30 +54,41 @@ def create_game():
 
 def connect_to_game():
     game_id = input("Game ID: ")
-    client_mgr.connect_to_game(int(game_id))
     print('Connecting to existing game ' + game_id)
+    if client_mgr.connect_to_game(int(game_id)):
+        print("Connected!")
+    else:
+        print("Failed to connect!")
 
 def send_move():
     # TODO create menu to select move and send move
     print("Select the move you want to send: ")
     print(move_options)
     sel = input("Selection: ")
+    print("Sending " + moves[sel])
     client_mgr.send_move(moves[sel])
 
 def check_results():
-    winner, player_move, opponent_move = client_mgr.get_results()
-    if winner == 0:
-        print("You tied! You both played " + str(player_move))
-    elif winner == 1:
-        print("You won! Your {} beat their {}".format(player_move, opponent_move))
-    elif winner == 2:
-        print("You lost! Their {} beat your {}".format(opponent_move, player_move))
-    else:
-        print("There isn't a result ready.")
+    try:
+        winner, player_move, opponent_move = client_mgr.get_results()
+        if winner == 0:
+            print("You tied! You both played " + str(player_move))
+        elif winner == 1:
+            print("You won! Your {} beat their {}".format(player_move, opponent_move))
+        elif winner == 2:
+            print("You lost! Their {} beat your {}".format(opponent_move, player_move))
+        else:
+            print("There isn't a result ready.")
+    except Exception:
+        print('An error occurred while checking the results.')
+
 
 def get_stats():
-    wins, losses, ties = client_mgr.get_game_stats()
-    print('Out of {} game(s), you won {} time(s) and lost {} time(s). You tied {} times.'.format(wins + losses + ties, wins, losses, ties))
+    try:
+        wins, losses, ties = client_mgr.get_game_stats()
+        print('Out of {} game(s), you won {} time(s) and lost {} time(s). You tied {} times.'.format(wins + losses + ties, wins, losses, ties))
+    except Exception:
+        print('An error occured while trying to retrieve the game stats.')
 
 main_menu = {"1": game_menu, "2": send_move, "3": check_results, "4": get_stats, "q": exit }
 connect_menu = {"1": create_game, "2": connect_to_game, 'q': main}

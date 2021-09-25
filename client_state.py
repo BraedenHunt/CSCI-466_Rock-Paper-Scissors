@@ -30,14 +30,17 @@ class ClientManager:
         return body['gameId'], body['player1Id'], body['player2Id']
 
     def send_move(self, move):
-        # TODO: Implement send move
-        self.get_next_move_id()
-        r = requests.post(self.server_url,
-                          headers={"gameId": str(self.game_id),
-                                   "userId": str(self.user_id),
-                                   "player2Id": str(self.p2_id)},
-                          json={"move": str(move),
-                                "moveId": str(self.move_id)})
+        try:
+            self.get_next_move_id()
+            r = requests.post(self.server_url,
+                              headers={"gameId": str(self.game_id),
+                                       "userId": str(self.user_id),
+                                       "player2Id": str(self.p2_id)},
+                              json={"move": str(move),
+                                    "moveId": str(self.move_id)})
+            return True
+        except Exception:
+            return False
 
     def get_results(self):
         r = requests.get(self.server_url + '/result',
