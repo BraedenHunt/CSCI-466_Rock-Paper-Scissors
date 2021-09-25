@@ -119,6 +119,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler, port=5000):
+    print('Starting server at http://localhost:' + str(port))
     server_address = ('', port)
 
     handler = functools.partial(handler_class)
@@ -128,6 +129,6 @@ def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler, port=5000
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        run(HTTPServer, MyHTTPRequestHandler, port=sys.argv[1])
+        run(HTTPServer, MyHTTPRequestHandler, port=int(sys.argv[1]))
     else:
         run(HTTPServer, MyHTTPRequestHandler)
