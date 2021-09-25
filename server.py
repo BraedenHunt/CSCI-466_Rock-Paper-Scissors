@@ -4,7 +4,6 @@ import sys
 from http import HTTPStatus
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-import game_history
 import result
 from game_history import GameHistoryManager
 from server_state import ServerStateManager
@@ -20,9 +19,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Serve a GET request."""
 
-        print(self.client_address)
-        print(self.headers)
-        print(self.path)
+        print('Handling GET: ' + self.path)
         if self.path == "/result":
             game_id = self.headers.get('gameId')
             user_id = int(self.headers.get('userId'))
@@ -68,21 +65,33 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(bytes(json.dumps(response), 'utf-8'))
 
+        elif self.path == "/get_game_stats":
+            game_id = int(self.headers.get('gameId'))
+            user_id = int(self.headers.get('userId'))
+            player2_id = int(self.headers.get('player2Id'))
+            p1_id, p2_id, p1_wins, p2_wins, ties = self.get_game_stats(game_id, user_id, player2_id)
+            response = {'player1Wins': p1_wins, 'player2Wins': p2_wins, "ties": ties, 'player1Id': p1_id, 'player2Id': p2_id}
+            self.send_response(HTTPStatus.OK)
+            self.end_headers()
+            self.wfile.write(bytes(json.dumps(response), 'utf-8'))
+
     def get_result(self, game_id, user_id, player2_id, move_id):
-        player1 = min(user_id, player2_id)
-        player2 = max(user_id, player2_id)
         game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
         return game_manager.find_result(move_id)
 
     def get_game(self, game_id):
         return GameHistoryManager.get_player_ids(game_id)
 
+    def get_game_stats(self, game_id, user_id, player2_id):
+        game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
+        return game_manager.get_game_stats()
+
     def get_next_move_id(self, game_id, user_id, player2_id):
         game_mgr = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
         return game_mgr.get_next_move_id(user_id)
 
     def do_POST(self):
-        print(type(self.headers))
+        print("Handling POST")
         game_id = int(self.headers.get("gameId"))
         user_id = int(self.headers.get("userId"))
         player2_id = int(self.headers.get("player2Id"))

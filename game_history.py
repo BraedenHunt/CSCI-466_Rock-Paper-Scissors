@@ -50,27 +50,37 @@ class GameHistoryManager:
             return ()
 
     def add_move(self, player_id, move_number, move):
-            if player_id == self.game_history.player1_id and len(self.game_history.player1_moves) == move_number - 1:
-                self.game_history.player1_moves.append(move)
-            elif player_id == self.game_history.player2_id and len(self.game_history.player2_moves) == move_number - 1:
-                self.game_history.player2_moves.append(move)
-            else:
-                return False
-            self.save_game_history()
-            return True
+        if player_id == self.game_history.player1_id and len(self.game_history.player1_moves) == move_number - 1:
+            self.game_history.player1_moves.append(move)
+        elif player_id == self.game_history.player2_id and len(self.game_history.player2_moves) == move_number - 1:
+            self.game_history.player2_moves.append(move)
+        else:
+            return False
 
+        if len(self.game_history.player1_moves) == len(self.game_history.player2_moves):
+            winner = self.determine_winner(self.game_history.player1_moves[-1], self.game_history.player2_moves[-1])
+            if winner == 1:
+                self.game_history.player1_wins += 1
+            elif winner == 2:
+                self.game_history.player2_wins += 1
+            elif winner == 0:
+                self.game_history.ties += 1
+        self.save_game_history()
+        return True
 
+    def get_game_stats(self):
+        return self.game_history.player1_id, self.game_history.player2_id,  self.game_history.player1_wins, self.game_history.player2_wins, self.game_history.ties
 
     def request_reset(self, player_id):
         if player_id == self.game_history.player1_id:
             self.game_history.player1_reset = True
         elif player_id == self.game_history.player2_id:
             self.game_history.player2_reset = True
-        self.save_game_history()
         if self.game_history.player1_reset and self.game_history.player2_reset:
-            # Reset game by wiping file
-            with open(self.file_name, 'w') as file:
-                file.write('')
+            self.game_history.ties = self.game_history.player1_wins = self.game_history.player2_wins = 0
+            self.game_history.player1_moves = self.game_history.player2_moves = []
+            self.game_history.player1_reset = self.game_history.player2_reset = False
+        self.save_game_history()
 
     def find_result(self, move):
         move_result = result.MoveResult()

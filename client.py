@@ -1,17 +1,22 @@
 from client_state import ClientManager
+import sys
 
-options = "0) Connect to game\n" \
-          "1) Send Move\n" \
-          "2) Check Results\n" \
+options = "1) Connect to game\n" \
+          "2) Send Move\n" \
+          "3) Check Results\n" \
+          "4) Get Game Stats\n" \
           "q) Exit game"
 line_break = '--------------------'
 move_options = "1) Rock\n" \
                "2) Paper\n" \
                "3) Scissors\n" \
                "r) Request Reset"
+
 client_mgr = ClientManager('http://localhost:5000')
 
-def main():
+def main(address='http://localhost:5000'):
+    global client_mgr
+    client_mgr = ClientManager(address)
     print("Welcome to Braeden's Rock Paper Scissors Game!")
     while 1:
         menu()
@@ -31,8 +36,8 @@ def menu():
 def game_menu():
     print(line_break)
     print("How would you like to connect?")
-    print("0) Create game\n"
-          "1) Join game\n"
+    print("1) Create game\n"
+          "2) Join game\n"
           "q) Return to Main Menu")
     sel = input("Selection: ")
     if sel in connect_menu:
@@ -70,9 +75,18 @@ def check_results():
     else:
         print("There isn't a result ready.")
 
-main_menu = {"0": game_menu, "1": send_move, "2": check_results, "q": exit }
-connect_menu = {"0": create_game, "1": connect_to_game, 'q': main}
+def get_stats():
+    wins, losses, ties = client_mgr.get_game_stats()
+    print('Out of {} game(s), you won {} time(s) and lost {} time(s). You tied {} times.'.format(wins + losses + ties, wins, losses, ties))
+
+main_menu = {"1": game_menu, "2": send_move, "3": check_results, "4": get_stats, "q": exit }
+connect_menu = {"1": create_game, "2": connect_to_game, 'q': main}
 moves = {"1": "rock", "2": "paper", "3": "scissors", "r": "reset"}
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        print("Using address: " + sys.argv[1])
+        main(address=sys.argv[1])
+    else:
+        print("Using default address: http://localhost:5000")
+        main()

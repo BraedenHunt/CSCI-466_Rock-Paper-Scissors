@@ -67,3 +67,19 @@ class ClientManager:
         body = json.loads(r.content.decode('utf-8'))
         self.move_id = int(body['moveId'])
         return self.move_id
+
+    def get_game_stats(self):
+        r = requests.get(self.server_url + "/get_game_stats",
+                         headers={"gameId": str(self.game_id),
+                                  "userId": str(self.user_id),
+                                  "player2Id": str(self.p2_id)})
+        body = json.loads(r.content.decode('utf-8'))
+        p1_id, p2_id = body['player1Id'], body['player2Id']
+        ties = body['ties']
+        if p1_id == self.user_id:
+            user_wins = body['player1Wins']
+            opponent_wins = body['player2Wins']
+        else:
+            user_wins = body['player2Wins']
+            opponent_wins = body['player1Wins']
+        return int(user_wins), int(opponent_wins), int(ties)
