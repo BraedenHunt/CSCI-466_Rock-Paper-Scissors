@@ -1,0 +1,41 @@
+5a6e213 Braeden Hunt 2021-09-26 - Cleaned Up Code
+ 13 files changed, 32 insertions(+), 13 deletions(-)
+
+247db77 Braeden Hunt 2021-09-25 - Fixed Some Type Errors
+ 5 files changed, 5 insertions(+), 3 deletions(-)
+
+75aea9b Braeden Hunt 2021-09-25 - Added Exception Handling
+ 3 files changed, 37 insertions(+), 20 deletions(-)
+
+29d4143 Braeden Hunt 2021-09-25 - Added Some Polish
+ 18 files changed, 85 insertions(+), 29 deletions(-)
+
+68586fc Braeden Hunt 2021-09-24 - Fixed Send Move
+ 11 files changed, 59 insertions(+), 8 deletions(-)
+
+9e4d4c6 Braeden Hunt 2021-09-23 - Added Join Game and Check Results
+ 8 files changed, 86 insertions(+), 28 deletions(-)
+
+fab90c7 Braeden Hunt 2021-09-23 - Created Client Manager
+ 2 files changed, 44 insertions(+), 8 deletions(-)
+
+1d96ee5 Braeden Hunt 2021-09-22 - Created Client
+ 1 file changed, 57 insertions(+)
+
+e549fcc Braeden Hunt 2021-09-13 - Added Server State, Game Creation, and Server Reset
+ 8 files changed, 160 insertions(+), 89 deletions(-)
+
+66e1cb3 Braeden Hunt 2021-09-12 - Added GET Result functionality
+ 4 files changed, 39 insertions(+), 13 deletions(-)
+
+469b6dc Braeden Hunt 2021-09-12 - Added JSON Serialization
+ 4 files changed, 83 insertions(+), 47 deletions(-)
+
+8624e55 Braeden Hunt 2021-09-09 - Added file reading
+ 2 files changed, 35 insertions(+), 15 deletions(-)
+
+ef6d0ea Braeden Hunt 2021-09-08 - Initial Commit
+ 8 files changed, 131 insertions(+)
+
+0256c53 Braeden Hunt 2021-09-08 - Initial commit
+ 1 file changed, 2 insertions(+)
