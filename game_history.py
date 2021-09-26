@@ -80,7 +80,10 @@ class GameHistoryManager:
             self.game_history.ties = self.game_history.player1_wins = self.game_history.player2_wins = 0
             self.game_history.player1_moves = self.game_history.player2_moves = []
             self.game_history.player1_reset = self.game_history.player2_reset = False
+            self.save_game_history()
+            return True
         self.save_game_history()
+        return False
 
     def find_result(self, move):
         move_result = result.MoveResult()

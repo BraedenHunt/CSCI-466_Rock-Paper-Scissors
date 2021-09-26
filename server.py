@@ -19,8 +19,8 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Serve a GET request."""
 
-        print('Handling GET: ' + self.path)
-        print(self.headers)
+        print('\nHandling GET: ' + self.path)
+        print('------Headers------\n' + str(self.headers).strip())
         if self.path == "/result":
             game_id = self.headers.get('gameId')
             user_id = int(self.headers.get('userId'))
@@ -92,8 +92,8 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         return game_mgr.get_next_move_id(user_id)
 
     def do_POST(self):
-        print("Handling POST")
-        print(self.headers)
+        print("\nHandling POST")
+        print('------Headers------\n' + str(self.headers).strip())
         game_id = int(self.headers.get("gameId"))
         user_id = int(self.headers.get("userId"))
         player2_id = int(self.headers.get("player2Id"))
@@ -104,13 +104,14 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         post_body = self.rfile.read(content_len)
 
         json_body = json.loads(post_body)
-        print(json_body)
+        print('------Body------\n' + str(json_body).strip())
 
         game_manager = GameHistoryManager(game_id, min(user_id, player2_id), max(user_id, player2_id))
         move = json_body["move"]
         if move == "reset":
-            game_manager.request_reset(user_id)
+            reset = game_manager.request_reset(user_id)
             self.send_response(HTTPStatus.OK)
+            self.send_header('reset', str(reset))
         elif game_manager.add_move(user_id, int(json_body["moveId"]), json_body["move"]):
             self.send_response(HTTPStatus.OK)
         else:

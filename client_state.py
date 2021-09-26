@@ -38,9 +38,11 @@ class ClientManager:
                                        "player2Id": str(self.p2_id)},
                               json={"move": str(move),
                                     "moveId": str(self.move_id)})
-            return True
+            if move == 'reset':
+                return True, r.headers.get('reset') == "True"
+            return True, False
         except Exception:
-            return False
+            return False, False
 
     def get_results(self):
         r = requests.get(self.server_url + '/result',

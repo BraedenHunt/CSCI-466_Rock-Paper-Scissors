@@ -61,12 +61,20 @@ def connect_to_game():
         print("Failed to connect!")
 
 def send_move():
-    # TODO create menu to select move and send move
     print("Select the move you want to send: ")
     print(move_options)
     sel = input("Selection: ")
     print("Sending " + moves[sel])
-    client_mgr.send_move(moves[sel])
+    result, reset = client_mgr.send_move(moves[sel])
+    if result:
+        print('Successfully sent.')
+        if moves[sel] == 'reset':
+            if reset:
+                print('The game has been reset.')
+            else:
+                print('Your opponent has not requested a reset yet.')
+    else:
+        print('Something went wrong. Move not sent')
 
 def check_results():
     try:
@@ -78,7 +86,7 @@ def check_results():
         elif winner == 2:
             print("You lost! Their {} beat your {}".format(opponent_move, player_move))
         else:
-            print("There isn't a result ready.")
+            print("There isn't a result ready. There may have been a reset.")
     except Exception:
         print('An error occurred while checking the results.')
 
